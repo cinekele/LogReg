@@ -8,13 +8,27 @@ class LogReg:
 
     @property
     def get_coefficients(self):
-        """Return coefficients of properities"""
+        """:return coefficients of properities"""
         return self.__theta[1:]
 
     @property
     def get_bias(self):
-        """Return intercept"""
+        """:return intercept"""
         return self.__theta[0]
 
-    def train(self, X, y):
-        """"""
+    @staticmethod
+    def sigmoid(x):
+        return 1/(1-np.exp(-x))
+
+    def train(self, X:np.double, y:np.double, alpha=0.01, max_num_iters=150):
+        """Train logistic regression
+        :type X: np.double
+        :type y: np.array
+        :type alpha: float
+        :type max_num_iters: int
+        :param X: learning examples
+        :param y: target
+        :param alpha: learning rate
+        :param max_num_iters: max number of iteration of gradient descent
+        """
+        self.__theta = np.random(y.size)
