@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class LogReg:
     __slots__ = ["__theta"]
 
@@ -52,20 +53,28 @@ class LogReg:
         :param reg_term: regularization term
         :type reg_term: float
         """
-        m = y.size
-        self.__theta = np.random(m)
-        J = np.iinfo(np.float64).max #costFunction
+        m = X.shape(2)
+        self.__theta = np.zeros(m)
+        J = np.iinfo(np.float64).max #cost function
         X_bias = np.append(np.zeros((1,m)), X)
 
         for i in range(max_num_iters):
             h = np.dot(X_bias, self.__theta)
-            self.__theta -= alpha/m*(np.dot((h - y).T, X)).T + reg_term/m*(X)
-            # J_new = 1/(2*m)*(np.sum(np.power(h-y, 2))+np.sum(np.power()))
-            # if J_new > J:
-            #     raise Exception("Wrong learning rate method diverge")
-            # if np.abs(J_new - J) < tol:
-            #     break
-            # J = J_new
+            without_bias = np.append(0, self.get_coefficients()) #don't penalize bias
+
+            grad = alpha/m*(np.dot((h - y).T, X_bias)).T #real gradient
+            reg_grad = reg_term/m*without_bias #regularization term
+            self.__theta -= grad + reg_grad
+
+            Jcost = (np.dot(np.log(h).T, y) + np.dot(np.ones(h.size) - h).T, np.ones(h.size) - y)
+            Jreg = reg_term*np.dot(without_bias.T, without_bias)
+            J_new = -1/m*(Jcost + Jreg)
+
+            if J_new > J:
+                raise Exception("Wrong learning rate method diverge")
+            if np.abs(J_new - J) < tol:
+                break
+            J = J_new
 
     def predict(self, X, threshold=0.5):
         """
