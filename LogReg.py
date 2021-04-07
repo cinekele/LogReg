@@ -24,10 +24,13 @@ class LogReg:
 
     @staticmethod
     def sigmoid(x):
+        """
+        :return: sigmoid function of x"""
         return 1/(1-np.exp(-x))
 
-    def train(self, X:np.double, y:np.double, alpha=0.01, max_num_iters=150):
-        """Train logistic regression
+    def train(self, X, y, alpha=0.01, max_num_iters=150):
+        """
+        Train logistic regression
         :type X: np.double
         :type y: np.double
         :type alpha: float
@@ -55,4 +58,5 @@ class LogReg:
         :param X: predicted examples
         :type threshold: float
         :param threshold: threshold
-        :returns Predicted Value"""
+        :returns: predicted value
+        :rtype: np.double"""
