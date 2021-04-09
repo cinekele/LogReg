@@ -1,47 +1,14 @@
-import numpy as np
+from numpy import concatenate, abs, log, dot, ones, finfo, copy, float64, zeros
+from warnings import warn
+from scipy.special import expit  # sigmoid function
 
 
 class LogReg:
-    __slots__ = ["__theta"]
+    __slots__ = ["__theta", "alpha", "max_num_iters", "tol", "reg_term"]
 
-    def __init__(self):
-        pass
-
-    @property
-    def get_coefficients(self):
+    def __init__(self, alpha=1e-4, max_num_iters=150, tol=1e-4, reg_term=0.0001):
         """
-        :returns: coefficients of properities
-        :rtype: np.double
-        """
-        return self.__theta[1:]
-
-    @property
-    def get_bias(self):
-        """
-        :return: intercept
-        :rtype: np.double
-        """
-        return self.__theta[0]
-
-    @staticmethod
-    def sigmoid(x):
-        """
-        :return: sigmoid function of x
-        :rtype: np.double
-        """
-        return 1/(1-np.exp(-x))
-
-    def train(self, X, y, alpha=0.01, max_num_iters=150, tol=1e-4, reg_term=0.01):
-        """
-        Train logistic regression using gradient decent
-
-        :param X: learning examples
-        :type X: np.double
-
-        :param y: target
-        :type y: np.double
-
-        :param alpha: learning rate
+        param alpha: learning rate
         :type alpha: float
 
         :param max_num_iters: max number of iteration of gradient descent
@@ -53,28 +20,66 @@ class LogReg:
         :param reg_term: regularization term
         :type reg_term: float
         """
-        m = X.shape(2)
-        self.__theta = np.zeros(m)
-        J = np.iinfo(np.float64).max #cost function
-        X_bias = np.append(np.zeros((1,m)), X)
+        self.alpha = alpha
+        self.max_num_iters = max_num_iters
+        self.tol = tol
+        self.reg_term = reg_term
 
-        for i in range(max_num_iters):
-            h = np.dot(X_bias, self.__theta)
-            without_bias = np.append(0, self.get_coefficients()) #don't penalize bias
+    @property
+    def get_coefficients(self):
+        """
+        :returns: coefficients of properities
+        :rtype: np.double
+        """
+        return copy(self.__theta[1:])
 
-            grad = alpha/m*(np.dot((h - y).T, X_bias)).T #real gradient
-            reg_grad = reg_term/m*without_bias #regularization term
+    @property
+    def get_bias(self):
+        """
+        :return: intercept
+        :rtype: np.double
+        """
+        return copy(self.__theta[0])
+
+    def train(self, X, y):
+        """
+        Train logistic regression using gradient decent
+
+        :param X: learning examples
+        :type X: np.array
+
+        :param y: target
+        :type y: np.array
+        """
+        m = X.shape[0]
+        n = X.shape[1]
+        self.__theta = zeros(n + 1)
+        j = finfo(float64).max  # cost function
+
+        X_bias = concatenate((ones((m, 1)), X), axis=1)
+        offset = 1e-6
+
+        for i in range(self.max_num_iters):
+            h = expit(dot(X_bias, self.__theta))
+            loss = h - y
+
+            without_bias = copy(self.__theta)
+            without_bias[0] = 0  # don't penalize bias
+
+            grad = self.alpha * (dot(loss.T, X_bias)).T / m  # real gradient
+            reg_grad = self.reg_term * without_bias / m  # regularization term
             self.__theta -= grad + reg_grad
 
-            Jcost = (np.dot(np.log(h).T, y) + np.dot(np.ones(h.size) - h).T, np.ones(h.size) - y)
-            Jreg = reg_term*np.dot(without_bias.T, without_bias)
-            J_new = -1/m*(Jcost + Jreg)
+            jcost = (-1 / m) * (dot(log(h + offset).T, y) + dot(log((ones(m) - h + offset)).T, ones(m) - y))
+            jreg = self.reg_term / (2 * m) * dot(without_bias.T, without_bias)
+            j_new = jcost + jreg
 
-            if J_new > J:
-                raise Exception("Wrong learning rate method diverge")
-            if np.abs(J_new - J) < tol:
+            if j_new > j:
+                warn("Wrong learning rate method diverge")
+
+            if abs(j_new - j) < self.tol:
                 break
-            J = J_new
+            j = j_new
 
     def predict(self, X, threshold=0.5):
         """
@@ -89,8 +94,9 @@ class LogReg:
         :returns: predicted value
         :rtype: np.double
         """
-
-        return self.sigmoid(np.dot(X, self.__theta)) >= threshold
+        m = X.shape[0]
+        X_bias = concatenate((ones((m, 1)), X), axis=1)
+        return expit(dot(X_bias, self.__theta)) >= threshold
 
     def predict_proba(self, X):
         """
@@ -100,5 +106,20 @@ class LogReg:
         :returns: probabilities of values
         :rtype: np.double
         """
+        m = X.shape[0]
+        X_bias = concatenate((ones((m, 1)), X), axis=1)
+        return expit(dot(X_bias, self.__theta))
 
-        return self.sigmoid(np.dot(X, self.__theta))
+
+if __name__ == '__main__':
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
+
+    X, y = load_breast_cancer(return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42)
+
+    my_logistic_regression = LogReg()
+    my_logistic_regression.train(X_train, y_train)
+    print(my_logistic_regression.predict(X_test))
