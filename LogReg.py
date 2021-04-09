@@ -74,9 +74,6 @@ class LogReg:
             jreg = self.reg_term / (2 * m) * dot(without_bias.T, without_bias)
             j_new = jcost + jreg
 
-            if j_new > j:
-                warn("Wrong learning rate method diverge")
-
             if abs(j_new - j) < self.tol:
                 break
             j = j_new
@@ -111,15 +108,3 @@ class LogReg:
         return expit(dot(X_bias, self.__theta))
 
 
-if __name__ == '__main__':
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.datasets import load_breast_cancer
-    from sklearn.model_selection import train_test_split
-
-    X, y = load_breast_cancer(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42)
-
-    my_logistic_regression = LogReg()
-    my_logistic_regression.train(X_train, y_train)
-    print(my_logistic_regression.predict(X_test))
